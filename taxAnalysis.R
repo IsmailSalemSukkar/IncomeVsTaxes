@@ -194,22 +194,22 @@ taxDataLongState <- taxData[2]
 taxDataLongSalPerc <- taxData[163:168]
 
 taxDataLongSalPerc <-   rename(taxDataLongSalPerc,
-  "01_Perc" = SalPerc01,
-  "05_Perc" = SalPerc05,
-  "10_Perc" = SalPerc10,
-  "25_Perc" = SalPerc25,
-  "50_Perc" = SalPerc50,
-  "75_Perc" = SalPerc75
+  "01%" = SalPerc01,
+  "05%" = SalPerc05,
+  "10%" = SalPerc10,
+  "25%" = SalPerc25,
+  "50%" = SalPerc50,
+  "75%" = SalPerc75
 )
 
-taxDataLongSalPerc <- pivot_longer(taxDataLongSalPerc, cols = "01_Perc":"75_Perc")
+taxDataLongSalPerc <- pivot_longer(taxDataLongSalPerc, cols = "01%":"75%")
 
 taxDataLongSalPerc <-   rename(taxDataLongSalPerc,
-                               Perc = name,
+                               Percentile = name,
                                SalPerc = value)
 
 
-taxDataLongSalPerc <- taxDataLongSalPerc[order(taxDataLongSalPerc$Perc),]
+taxDataLongSalPerc <- taxDataLongSalPerc[order(taxDataLongSalPerc$Percentile),]
 
 taxDataLongInc <- data.frame(y=unlist(taxDataLongInc))
 taxDataLongETR <- data.frame(y=unlist(taxDataLongETR))
@@ -223,7 +223,7 @@ taxDataLongIncETR$AvgInc <- taxDataLongInc$y
 taxDataLongIncETR$SalPerc <- taxDataLongSalPerc$SalPerc
 taxDataLongIncETR$ETR <- taxDataLongETR$y
 taxDataLongIncETR$State <- taxDataLongState$y
-taxDataLongIncETR$Perc <- taxDataLongSalPerc$Perc
+taxDataLongIncETR$Percentile <- taxDataLongSalPerc$Percentile
 
 
 taxDataLongIncETR <- as.data.frame(taxDataLongIncETR)
@@ -538,34 +538,48 @@ avPlots(selectedTaxVsInc75)
 #Lets do a visualization!
 
 
-taxDataLongIncETR_NO_US$Perc <- as.factor(taxDataLongIncETR_NO_US$Perc)
 
-summary(taxDataLongIncETR_NO_US$Perc)
 
 
 ggplot(data=taxDataLongIncETR_NO_US, aes(y=ETR,x=AvgInc))+
   geom_smooth() + 
-  geom_point(aes(color=Perc)) +
+  geom_point(aes(color=Percentile)) +
   xlab("Average Income Per Bracket") +
   ylab("Effective Tax Rate") +
   ggtitle("Effective Tax Rate vs Average Income")
 
+ggsave("ETRvsSal.png",width = 1920, height = 1080,units="px")
+
 
 ggplot(data=taxDataLongIncETR_NO_US, aes(y=ETR, x=SalPerc)) + 
-  geom_point(aes(color=Perc))+
+  geom_point(aes(color=Percentile))+
   geom_smooth()+
   ylab("Effective Tax Rate per Bracket") +
   xlab("Salary % of Income") +
   ggtitle("Effective Tax Rate vs Salary % of Income")
 
+ggsave("ETRvsSalPerc.png",width = 1920, height = 1080,units="px")
+
+
 ggplot(data=taxDataLongIncETR_NO_US, aes(y=SalPerc , x=AvgInc)) + 
-  geom_point(aes(color=Perc)) +
+  geom_point(aes(color=Percentile)) +
   geom_smooth() +
   xlab("Average Income per Bracket") +
   ylab("Percent of Income that is Salary") +
-  ggtitle("Percent of Income that is Salary vs Average Income")
+  ggtitle("Salary % of income vs Average Income")
+
+ggsave("SalVsInc.png",width = 1920, height = 1080,units="px")
 
 summary(taxDataLongIncETR_NO_US$Perc)
+
+ggplot(data=taxDataLongIncETR_NO_US, aes(y=SalPerc, x=Percentile)) + 
+  geom_boxplot(aes(fill=Percentile)) +
+  ylab("Salary Percentage of AGI") +
+  xlab("AGI Percentile") +
+  ggtitle("Average Salary Percentage per Percentile")
+
+ggsave("ETRvsSalPerc.png",width = 1920, height = 1080,units="px")
+
 
 #In other words, as the income increases, the percentage of income will slowly switch from
 #mostly salary to lower levels of salary
