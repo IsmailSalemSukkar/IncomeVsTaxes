@@ -1,0 +1,285 @@
+library(MuMIn)
+library(glmmTMB)
+library(tidyverse)
+library(DHARMa)
+library(car)
+library(performance)
+library(emmeans)
+options(scipen=999)
+
+
+
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+setwd("./dataRaw/")
+
+tax2019 <- read.csv("19instateshares.csv")
+tax2019$Year <- 2019
+
+tax2018 <- read.csv("18instateshares.csv")
+tax2018$Year <- 2018
+
+
+tax2017 <- read.csv("17instateshares.csv")
+tax2017$Year <- 2017
+tax2017$sum_agi_01 <- tax2017$sum_agi_01 /1000
+tax2017$sum_agi_05 <- tax2017$sum_agi_05 /1000
+tax2017$sum_agi_10 <- tax2017$sum_agi_10 /1000
+tax2017$sum_agi_25 <- tax2017$sum_agi_25 /1000
+tax2017$sum_agi_50 <- tax2017$sum_agi_50 /1000
+tax2017$sum_agi_75 <- tax2017$sum_agi_75 /1000
+tax2017$sum_tax_01 <- tax2017$sum_tax_01 /1000
+tax2017$sum_tax_05 <- tax2017$sum_tax_05 /1000
+tax2017$sum_tax_10 <- tax2017$sum_tax_10 /1000
+tax2017$sum_tax_25 <- tax2017$sum_tax_25 /1000
+tax2017$sum_tax_50 <- tax2017$sum_tax_50 /1000
+tax2017$sum_tax_75 <- tax2017$sum_tax_75 /1000
+
+
+
+tax2016 <- read.csv("16instateshares.csv")
+tax2016$Year <- 2016
+tax2016$sum_agi_01 <- tax2016$sum_agi_01 /1000
+tax2016$sum_agi_05 <- tax2016$sum_agi_05 /1000
+tax2016$sum_agi_10 <- tax2016$sum_agi_10 /1000
+tax2016$sum_agi_25 <- tax2016$sum_agi_25 /1000
+tax2016$sum_agi_50 <- tax2016$sum_agi_50 /1000
+tax2016$sum_agi_75 <- tax2016$sum_agi_75 /1000
+tax2016$sum_tax_01 <- tax2016$sum_tax_01 /1000
+tax2016$sum_tax_05 <- tax2016$sum_tax_05 /1000
+tax2016$sum_tax_10 <- tax2016$sum_tax_10 /1000
+tax2016$sum_tax_25 <- tax2016$sum_tax_25 /1000
+tax2016$sum_tax_50 <- tax2016$sum_tax_50 /1000
+tax2016$sum_tax_75 <- tax2016$sum_tax_75 /1000
+
+tax2015 <- read.csv("15instateshares.csv")
+tax2015$Year <- 2015
+
+tax2014 <- read.csv("14instateshares.csv")
+tax2014$Year <- 2014
+tax2014$sum_agi_01 <- tax2014$sum_agi_01 /1000
+tax2014$sum_agi_05 <- tax2014$sum_agi_05 /1000
+tax2014$sum_agi_10 <- tax2014$sum_agi_10 /1000
+tax2014$sum_agi_25 <- tax2014$sum_agi_25 /1000
+tax2014$sum_agi_50 <- tax2014$sum_agi_50 /1000
+tax2014$sum_agi_75 <- tax2014$sum_agi_75 /1000
+tax2014$sum_tax_01 <- tax2014$sum_tax_01 /1000
+tax2014$sum_tax_05 <- tax2014$sum_tax_05 /1000
+tax2014$sum_tax_10 <- tax2014$sum_tax_10 /1000
+tax2014$sum_tax_25 <- tax2014$sum_tax_25 /1000
+tax2014$sum_tax_50 <- tax2014$sum_tax_50 /1000
+tax2014$sum_tax_75 <- tax2014$sum_tax_75 /1000
+
+
+
+
+
+common.names <- intersect(colnames(tax2014),
+                          colnames(tax2018))
+
+taxData <- rbind(tax2019[, common.names], tax2018[, common.names],
+                 tax2017[, common.names],tax2016[, common.names],
+                 tax2015[, common.names],tax2014[, common.names])
+
+setwd("../")
+#taxData <- read.csv("taxData.csv")
+#taxData <- taxData[!taxData$Year=="2017",]
+
+taxData$avg_inc_1 <- (taxData$sum_agi_01/taxData$top_01) * 1000
+
+taxData$avg_inc_5 <- ((taxData$sum_agi_05-taxData$sum_agi_01)/
+  (taxData$top_05-taxData$top_01)) * 1000
+
+taxData$avg_inc_10 <- ((taxData$sum_agi_10-taxData$sum_agi_05)/
+                           (taxData$top_10-taxData$top_05)) * 1000
+
+taxData$avg_inc_25 <- ((taxData$sum_agi_25-taxData$sum_agi_10)/
+                            (taxData$top_25-taxData$top_10)) * 1000
+
+taxData$avg_inc_50 <- ((taxData$sum_agi_50-taxData$sum_agi_25)/
+                            (taxData$top_50-taxData$top_25)) * 1000
+
+taxData$avg_inc_75 <- ((taxData$sum_agi_75-taxData$sum_agi_50)/
+                            (taxData$top_75-taxData$top_50)) * 1000
+
+
+taxData$avg_tax_rate_01 <- taxData$sum_tax_01/taxData$sum_agi_01
+
+taxData$avg_tax_rate_5 <- ((taxData$sum_tax_05-taxData$sum_tax_01)/
+                          (taxData$sum_agi_05-taxData$sum_agi_01)) 
+
+taxData$avg_tax_rate_10 <- ((taxData$sum_tax_10-taxData$sum_tax_05)/
+                           (taxData$sum_agi_10-taxData$sum_agi_05)) 
+
+taxData$avg_tax_rate_25 <- ((taxData$sum_tax_25-taxData$sum_tax_10)/
+                            (taxData$sum_agi_25-taxData$sum_agi_10))
+
+taxData$avg_tax_rate_50 <- ((taxData$sum_tax_50-taxData$sum_tax_25)/
+                            (taxData$sum_agi_50-taxData$sum_agi_25)) 
+
+taxData$avg_tax_rate_75 <- ((taxData$sum_tax_75-taxData$sum_tax_50)/
+                            (taxData$sum_agi_75-taxData$sum_agi_50)) 
+
+
+
+taxData <- taxData[!taxData$state=="OA",]
+
+write.csv(taxData,"taxDataAnalyzed.csv")
+###Does number of returns increase each year?##
+
+
+
+fit<- glmmTMB(total~as.factor(Year)+(1|state), data=taxData, family = "nbinom2")
+summary(fit)
+
+r.squaredGLMM(fit)
+
+Anova(fit)
+
+
+
+
+
+#Yes, it does, very low R squared but with numbers this high it makes sense
+#Suspect that if done with just total US returns would be higher R2
+#The random effect of states is likely overshadowing pop growth
+
+
+fit<- glmmTMB(total~as.factor(Year), data=taxData[taxData$state=="US",], 
+              family = "nbinom2")
+pTotUSA <- Anova(fit)
+
+r2totUSA<- r.squaredGLMM(fit)
+
+#And that suspicion is correct, with a .99 R-squared. Population growth? 
+
+ggplot(data=taxData[taxData$state=="US",],aes(x=(Year), y=total))+
+  geom_smooth(method = "lm") + geom_point() + xlab("Year")+ylab("Number of Returns in US")+
+  ggtitle("Total USA Returns Over Time", 
+          paste0("R2 = ",round(r2totUSA[1,1],5), " p = ", pTotUSA[1,3]))
+
+
+#Does the 1% of each state have similar tax rates? 
+
+
+
+
+#####First lets see what the avg income tax rate is at 1,000,000, may be more useful 
+#Than looking at the 1%#######
+
+taxData_NO_US <- taxData
+
+taxDataLongInc <- taxData_NO_US[116:121]
+taxDataLongETR <- taxData_NO_US[122:127]
+taxDataLongState <- taxData_NO_US[2]
+
+
+taxDataLongInc <- data.frame(y=unlist(taxDataLongInc))
+taxDataLongETR <- data.frame(y=unlist(taxDataLongETR))
+taxDataLongState <- data.frame(y=unlist(taxDataLongState))
+taxDataLongIncETR <- NULL
+
+taxDataLongIncETR$AvgInc <- taxDataLongInc$y
+
+taxDataLongIncETR$ETR <- taxDataLongETR$y
+taxDataLongIncETR$State <- taxDataLongState$y
+
+taxDataLongIncETR <- as.data.frame(taxDataLongIncETR)
+
+fitMilTaxRate <- glmmTMB(ETR~AvgInc, data=taxDataLongIncETR)
+plot(simulateResiduals(fitMilTaxRate))
+
+r.squaredGLMM(fitMilTaxRate)
+
+summary(fitMilTaxRate)
+
+
+
+efrMil <- 0.000000121919*1000000+0.092524295558
+
+efrMil #The model shows that an generally a person makes 1000000 is taxed 
+#at a rate of 21.44%
+
+
+
+ggplot(data=taxDataLongIncETR, aes(y=ETR,x=AvgInc))+geom_smooth() + geom_point()
+
+
+#Lets compare that to the US
+
+taxData_US <- taxData[taxData$state=="US",]
+
+taxDataLongIncUS <- taxData_US[116:121]
+taxDataLongETRUS <- taxData_US[122:127]
+
+taxDataLongIncUS <- data.frame(y=unlist(taxDataLongIncUS))
+taxDataLongETRUS <- data.frame(y=unlist(taxDataLongETRUS))
+
+taxDataLongIncETRUS <- NULL
+
+taxDataLongIncETRUS$AvgInc <- taxDataLongIncUS$y
+
+taxDataLongIncETRUS$ETR <- taxDataLongETRUS$y
+
+taxDataLongIncETRUS <- as.data.frame(taxDataLongIncETRUS)
+
+fitMilTaxRateUS <- glmmTMB(ETR~AvgInc, data=taxDataLongIncETRUS)
+plot(simulateResiduals(fitMilTaxRateUS))
+
+r.squaredGLMM(fitMilTaxRateUS)
+
+summary(fitMilTaxRateUS)
+
+
+
+efrMilUS <- 0.00000012060*1000000+0.09074010018
+
+efrMilUS
+
+#US is 21.13%, which is likely stat close enough to 21.44
+
+fitStateTaxRate <- glmmTMB(ETR~State + (1|AvgInc), data=taxDataLongIncETR)
+plot(simulateResiduals(fitStateTaxRate))
+
+r.squaredGLMM(fitStateTaxRate)
+
+summary(fitStateTaxRate)
+
+diffStateTaxRate <- emmeans(fitStateTaxRate, pairwise~State, type="response")
+
+diffStateTaxRate <- as.data.frame(diffStateTaxRate$contrasts)
+
+#As a whole, tax rates do not differ based on state
+
+
+
+#Is the effective tax rate of the one percent different at different states?
+
+
+fitETR1 <- glmmTMB(avg_tax_rate_01~state+(1|avg_inc_1), data=taxData)
+plot(simulateResiduals(fitETR1))
+
+summary(fitETR1)
+Anova(fitETR1)
+
+diffETR1 <- emmeans(fitETR1, pairwise~state, type="response")
+
+diffETR1 <- as.data.frame(diffETR1$contrasts)
+
+#Only Vermont Areas are even close to stat different than the national 
+#effective tax rate of the USA
+
+#How about the top 5% (2-5%)
+
+fitETR5 <- glmmTMB(avg_tax_rate_5~state+(1|avg_inc_5), data=taxData)
+plot(simulateResiduals(fitETR5))
+
+summary(fitETR5)
+Anova(fitETR5)
+
+diffETR5 <- emmeans(fitETR5, pairwise~state, type="response")
+
+diffETR5 <- as.data.frame(diffETR5$contrasts)
+
+#Interesting! Why does the 5% get taxed differently based on state?
+
